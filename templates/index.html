@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Students Success &amp; Performance</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <nav>
+    <strong>Student Performance</strong>
+    <span><a href="#overview">Overview</a><a href="#charts">Analysis</a><a href="#correlation">Correlation</a><a href="#factors">Factors</a><a href="#analyzer">Analyze my marks</a></span>
+  </nav>
+</header>
+
+<section class="hero" id="overview">
+  <p class="eyebrow">Data analysis project</p>
+  <h1>AI Students Success &amp; Performance</h1>
+  <p class="lead">Analysis of 4,000 students across 15 features – grades, exam scores, study habits, attendance, sleep and internet access.</p>
+  <div class="stats">
+    <div><b>4,000</b><span>students</span></div>
+    <div><b>15</b><span>features</span></div>
+    <div><b>59.5</b><span>avg final exam</span></div>
+    <div><b>0</b><span>duplicate rows</span></div>
+  </div>
+  <p class="note">Cleaning: missing numeric values were filled with the median and missing categories with the most frequent value.</p>
+</section>
+
+<main>
+<section id="charts">
+  <h2>Performance overview</h2>
+  <div class="grid2">
+    <figure class="card"><img src="{{ url_for('static', filename='img/grade_distribution.png') }}" alt="Final grade distribution"><figcaption><h3>Final grade distribution</h3><p>{{ insights.grades }}</p></figcaption></figure>
+    <figure class="card"><img src="{{ url_for('static', filename='img/avg_scores.png') }}" alt="Average academic scores"><figcaption><h3>Average academic scores</h3><p>{{ insights.avg }}</p></figcaption></figure>
+    <figure class="card"><img src="{{ url_for('static', filename='img/internet.png') }}" alt="Internet access vs final score"><figcaption><h3>Internet access vs final score</h3><p>{{ insights.internet }}</p></figcaption></figure>
+    <figure class="card"><img src="{{ url_for('static', filename='img/overview.png') }}" alt="Four panel overview including quiz vs final scatter plot"><figcaption><h3>Dashboard view</h3><p>The scatter plot shows a positive relationship: students with higher quiz scores generally achieve higher final exam scores.</p></figcaption></figure>
+  </div>
+</section>
+
+<section id="correlation">
+  <h2>Correlation heatmap</h2>
+  <figure class="card wide"><img src="{{ url_for('static', filename='img/heatmap.png') }}" alt="Correlation heatmap"><figcaption><p>{{ insights.heatmap }}</p></figcaption></figure>
+</section>
+
+<section id="factors">
+  <h2>What affects the final exam score?</h2>
+  <div class="grid2">
+    <figure class="card"><img src="{{ url_for('static', filename='img/study.png') }}" alt="Study hours vs final score"><figcaption><h3>Study hours</h3><p>{{ insights.study }}</p></figcaption></figure>
+    <figure class="card"><img src="{{ url_for('static', filename='img/attendance.png') }}" alt="Attendance vs final score"><figcaption><h3>Attendance</h3><p>{{ insights.attendance }}</p></figcaption></figure>
+    <figure class="card"><img src="{{ url_for('static', filename='img/assignments.png') }}" alt="Assignment completion vs final score"><figcaption><h3>Assignment completion</h3><p>{{ insights.assignments }}</p></figcaption></figure>
+    <figure class="card"><img src="{{ url_for('static', filename='img/sleep.png') }}" alt="Sleep vs final score"><figcaption><h3>Sleep</h3><p>{{ insights.sleep }}</p></figcaption></figure>
+  </div>
+</section>
+
+<section id="analyzer" class="analyzer">
+  <h2>Analyze my marks</h2>
+  <p class="sub">Enter your marks. Quiz and midterm are required; the rest are optional but give a fuller report. Your numbers are compared with the 4,000-student dataset – no machine learning, just averages and simple rules.</p>
+
+  <form method="post" action="{{ url_for('index') }}#analyzer" class="card form">
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <div class="fields">
+      <label>Quiz average (0–100) *<input type="number" name="quiz" min="0" max="100" step="0.1" required value="{{ form.get('quiz','') }}"></label>
+      <label>Midterm score (0–100) *<input type="number" name="midterm" min="0" max="100" step="0.1" required value="{{ form.get('midterm','') }}"></label>
+      <label>Previous GPA (0–4)<input type="number" name="gpa" min="0" max="4" step="0.01" value="{{ form.get('gpa','') }}"></label>
+      <label>Study hours per day<input type="number" name="study" min="0" max="24" step="0.1" value="{{ form.get('study','') }}"></label>
+      <label>Attendance %<input type="number" name="attendance" min="0" max="100" step="0.1" value="{{ form.get('attendance','') }}"></label>
+      <label>Sleep hours per day<input type="number" name="sleep" min="0" max="24" step="0.1" value="{{ form.get('sleep','') }}"></label>
+      <label>Assignments completed<input type="number" name="assign_done" min="0" step="1" value="{{ form.get('assign_done','') }}"></label>
+      <label>Total assignments<input type="number" name="assign_total" min="1" step="1" value="{{ form.get('assign_total','') }}"></label>
+      <label>Internet access
+        <select name="internet">
+          <option value="">Not specified</option>
+          <option value="Yes" {{ 'selected' if form.get('internet')=='Yes' }}>Yes</option>
+          <option value="No" {{ 'selected' if form.get('internet')=='No' }}>No</option>
+        </select>
+      </label>
+    </div>
+    <button type="submit">Analyze</button>
+  </form>
+
+  {% if result %}
+  <div class="result card">
+    <div class="summary">
+      <div class="grade">{{ result.grade }}</div>
+      <div>
+        <h3>Estimated final score: {{ result.estimate }} / 100</h3>
+        <p>{{ result.vs_avg|abs }} points {{ 'above' if result.vs_avg >= 0 else 'below' }} the dataset average (59.5). Roughly the {{ result.percentile }}th percentile of students.</p>
+        <p class="small">Estimate = weighted average of quiz (40%), midterm (40%) and previous GPA (20%, if given) – the factors most linked to the final exam. Grade bands (A+ ≥ 90, A ≥ 80, B ≥ 70, C ≥ 55, D ≥ 45) are an assumption, so treat the grade as a guide only.</p>
+      </div>
+    </div>
+
+    <h3>You vs. the average student</h3>
+    <div class="bars">
+      {% for f in result.factors %}
+      <div class="row">
+        <div class="lbl"><b>{{ f.label }}</b><span class="{{ 'up' if f.above else 'down' }}">{{ f.value }}{{ f.unit if f.unit != '/100' and f.unit != '/4' else '' }} vs {{ f.mean }} avg ({{ '+' if f.above }}{{ f.diff }}) · {{ f.percentile }}th pct</span></div>
+        <div class="track"><div class="you" style="width: {{ f.pct_you }}%"></div></div>
+        <div class="track thin"><div class="avg" style="width: {{ f.pct_avg }}%"></div></div>
+      </div>
+      {% endfor %}
+      {% if result.completion is not none %}
+      <div class="row"><div class="lbl"><b>Assignment completion</b><span>{{ result.completion }}%</span></div>
+        <div class="track"><div class="you" style="width: {{ result.completion }}%"></div></div></div>
+      {% endif %}
+      <p class="legend"><i class="k you"></i> You <i class="k avg"></i> Dataset average</p>
+    </div>
+
+    <div class="grid2">
+      <div><h3>Strengths</h3><ul class="good">{% for g in result.good %}<li>{{ g }}</li>{% else %}<li>Enter more fields to see strengths.</li>{% endfor %}</ul></div>
+      <div><h3>Areas to improve</h3><ul class="tips">{% for t in result.tips %}<li>{{ t }}</li>{% else %}<li>Nothing flagged – keep it up!</li>{% endfor %}</ul></div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+</main>
+
+<footer>Built with Flask · Charts and insights from the project notebook</footer>
+</body>
+</html>
